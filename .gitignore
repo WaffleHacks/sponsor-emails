@@ -249,3 +249,6 @@ Thumbs.db
 # Ignore all local history of files
 .history
 .ionide
+
+### Project Files ###
+service-account.json
