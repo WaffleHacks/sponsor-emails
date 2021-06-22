@@ -6,6 +6,10 @@ authors = ["Alex Krantz <alex@krantz.dev>"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
+gspread = "^3.7.0"
+click = "^8.0.1"
+google-api-python-client = "^2.10.0"
+requests = "^2.25.1"
 
 [tool.poetry.dev-dependencies]
 black = "^21.6b0"
