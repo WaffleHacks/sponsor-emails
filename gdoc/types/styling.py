@@ -23,6 +23,71 @@ class TextStyle(BaseModel):
     backgroundColor: t.Optional[OptionalColor]
     foregroundColor: t.Optional[OptionalColor]
 
+    def merge(self, style: "TextStyle") -> "TextStyle":
+        """
+        Merge two text styles together
+        :param style: the style to merge with
+        :return: a new combined style
+        """
+        result = self.copy()  # type: TextStyle
+
+        for field in self.__fields__.keys():
+            if getattr(result, field) is None:
+                new = getattr(style, field)
+                setattr(result, field, new)
+
+        return result
+
+    def apply(self, text: str) -> str:
+        """
+        Apply the text style to a piece of text using HTML
+        :param text: the text to apply the style to
+        :return: the formatted text
+        """
+        result = text
+        css = ""
+
+        # Add HTML properties
+        if self.underline:
+            result = f"<u>{result}</u>"
+        if self.italic:
+            result = f"<i>{result}</i>"
+        if self.bold:
+            result = f"<b>{result}</b>"
+        if self.strikethrough:
+            result = f"<s>{result}</s>"
+        if self.link:
+            result = f'<a href="{self.link.href}" target="_blank">{result}</a>'
+        if self.smallCaps:
+            result = f"<small>{result}</small>"
+        if self.baselineOffset == BaselineOffset.SUBSCRIPT:
+            result = f"<sub>{result}</sub>"
+        if self.baselineOffset == BaselineOffset.SUPERSCRIPT:
+            result = f"<sup>{result}</sup>"
+
+        # Add CSS properties
+        if self.fontSize:
+            css += f"font-size: {self.fontSize.magnitude};"
+        if self.weightedFontFamily:
+            css += (
+                f"font-weight: {self.weightedFontFamily.weight};"
+                f'font-family: "{self.weightedFontFamily.fontFamily}", serif;'
+            )
+        if self.foregroundColor:
+            if self.foregroundColor.color:
+                color = self.foregroundColor.color.rgbColor
+                css += f"color: rgb({color.red},{color.blue},{color.green});"
+        if self.backgroundColor:
+            if self.backgroundColor.color:
+                color = self.backgroundColor.color.rgbColor
+                css += f"background-color: rgb({color.red},{color.blue},{color.green});"
+
+        # Add the CSS to a span if needed
+        if css != "":
+            result = f'<span style="{css}">{result}</span>'
+
+        return result
+
 
 class ParagraphStyle(BaseModel):
     """
@@ -117,6 +182,18 @@ class Link(BaseModel):
     bookmarkId: t.Optional[str]
     headingId: t.Optional[str]
     url: t.Optional[str]
+
+    @property
+    def href(self) -> str:
+        """Get the link"""
+        if self.bookmarkId is not None:
+            return self.bookmarkId
+        elif self.headingId is not None:
+            return self.headingId
+        elif self.url is not None:
+            return self.url
+        else:
+            return ""
 
 
 class WeightedFontFamily(BaseModel):

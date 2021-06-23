@@ -1,8 +1,8 @@
 from enum import Enum
-from pydantic import BaseModel
+from pydantic import BaseModel, PrivateAttr
 import typing as t
 
-from .styling import ParagraphStyle, NamedStyle, SectionStyle, TextStyle
+from .styling import ParagraphStyle, NamedStyle, NamedStyleType, SectionStyle, TextStyle
 
 
 class Document(BaseModel):
@@ -14,6 +14,55 @@ class Document(BaseModel):
     revisionId: str
     suggestionsViewMode: "SuggestionsViewMode"
     documentId: str
+
+    _text: t.Optional[str] = PrivateAttr(default=None)
+    _html: t.Optional[str] = PrivateAttr(default=None)
+
+    @property
+    def text(self) -> str:
+        """Get the document as plaintext"""
+        if self._text is None:
+            self.__extract_content()
+        return self._text
+
+    @property
+    def html(self) -> str:
+        """Get the document as HTML"""
+        if self._html is None:
+            self.__extract_content()
+        return self._html
+
+    def __extract_content(self):
+        """
+        Get the content from the document
+        """
+        text = ""
+        html = ""
+
+        styles = self.namedStyles.style_map
+
+        for structural_element in self.body.content:
+            # Ignore section breaks
+            if structural_element.paragraph is None:
+                continue
+
+            # Get the parent style
+            paragraph = structural_element.paragraph
+            paragraph_style = styles[paragraph.paragraphStyle.namedStyleType]
+
+            # Add the content
+            html_segment = "<p>"
+            for element in paragraph.elements:
+                content = element.textRun.content
+                text_style = element.textRun.textStyle.merge(paragraph_style.textStyle)
+
+                text += content
+                html_segment += text_style.apply(content).replace("\n", "<br>")
+
+            html += html_segment + "</p>"
+
+        self._text = text
+        self._html = html
 
 
 class SuggestionsViewMode(str, Enum):
@@ -93,6 +142,17 @@ class NamedStyles(BaseModel):
     """
 
     styles: t.List[NamedStyle]
+
+    _style_map: t.Dict[NamedStyleType, NamedStyle] = PrivateAttr(default={})
+
+    @property
+    def style_map(self) -> t.Dict[NamedStyleType, NamedStyle]:
+        """A map from style type to style"""
+        if len(self._style_map) == 0:
+            for style in self.styles:
+                self._style_map[style.namedStyleType] = style
+
+        return self._style_map
 
 
 Document.update_forward_refs()
