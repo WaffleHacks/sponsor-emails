@@ -3,7 +3,7 @@ from pathlib import Path
 from pydantic import ValidationError
 from sys import exit
 
-from sponsor_emails import Config, load_config
+from sponsor_emails import Config, load_config, subcommands
 
 
 def error(message: str):
@@ -53,6 +53,14 @@ def main(ctx: click.Context, config_path: Path):
                 click.echo(f"\t{styled}: {message}")
 
             exit(1)
+
+
+@main.command(help="Check that the configuration is valid")
+@click.pass_obj
+def validate(cfg: Config):
+    statuses = subcommands.validate(cfg)
+    for status in statuses:
+        click.echo(status)
 
 
 if __name__ == "__main__":

@@ -25,6 +25,9 @@ DEFAULT_CONFIG = """{
 }
 """
 
+# MailGun base URL
+MAILGUN_URL = "https://api.mailgun.net/v3"
+
 # GCP authentication scopes
 SCOPES = [
     "https://www.googleapis.com/auth/documents.readonly",

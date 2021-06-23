@@ -1,5 +1,6 @@
 from pathlib import Path
 from pydantic import BaseModel, FilePath, HttpUrl, validator
+from requests.auth import HTTPBasicAuth
 
 from .constants import DEFAULT_CONFIG
 
@@ -47,6 +48,12 @@ class Credentials(BaseModel):
     _is_present_mailgun_api_key = validator("mailgun_api_key", allow_reuse=True)(
         is_present
     )
+
+    def mailgun(self) -> HTTPBasicAuth:
+        """
+        Get authentication information for the MailGun API
+        """
+        return HTTPBasicAuth("api", self.mailgun_api_key)
 
 
 class Sponsors(BaseModel):
