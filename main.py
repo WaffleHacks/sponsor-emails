@@ -1,7 +1,17 @@
 import click
 from pathlib import Path
+from pydantic import ValidationError
+from sys import exit
 
-from sponsor_emails import load_config
+from sponsor_emails import Config, load_config
+
+
+def error(message: str):
+    """
+    Display an error message
+    :param message: the message to display
+    """
+    click.echo(click.style("ERROR: ", fg="red", bold=True) + message)
 
 
 @click.group(
@@ -29,8 +39,20 @@ def main(ctx: click.Context, config_path: Path):
         click.echo(ctx.get_help())
 
     else:
-        ctx.ensure_object(dict)
-        ctx.obj["CONFIG"] = load_config(config_path)
+        try:
+            ctx.obj = load_config(config_path)
+        except ValidationError as e:
+            error("failed to load configuration")
+
+            for err in e.errors():
+                location = ".".join(err["loc"])
+                styled = click.style(location, fg="yellow")
+
+                message = err["msg"]
+
+                click.echo(f"\t{styled}: {message}")
+
+            exit(1)
 
 
 if __name__ == "__main__":
