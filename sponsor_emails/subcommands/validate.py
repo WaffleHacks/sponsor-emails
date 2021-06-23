@@ -1,5 +1,7 @@
 from click import style
 from enum import Enum
+from googleapiclient.errors import HttpError
+import gdoc
 import gspread
 from json import JSONDecodeError
 from pydantic import BaseModel
@@ -8,6 +10,12 @@ import typing as t
 
 from ..config import Config
 from ..constants import MAILGUN_URL
+
+TEST_DATA = {
+    "company_name": "TEST_COMPANY",
+    "contact_name": "TEST_CONTACT",
+    "sender_name": "TEST_SENDER",
+}
 
 
 class Status(str, Enum):
@@ -38,7 +46,7 @@ class Result(BaseModel):
 
 
 def validate(cfg: Config) -> t.List[Result]:
-    return [test_mailgun(cfg), test_sheets(cfg)]
+    return [test_mailgun(cfg), test_sheets(cfg), test_docs(cfg)]
 
 
 def test_mailgun(cfg: Config) -> Result:
@@ -114,3 +122,40 @@ def test_sheets(cfg: Config) -> Result:
         return Result.error("google_sheets", "worksheet not found")
 
     return Result.ok("google_sheets")
+
+
+def test_docs(cfg: Config) -> Result:
+    """
+    Test authentication, check the doc exists, and check the placeholders exist
+    :param cfg: the configuration
+    :return: status of the test
+    """
+    try:
+        # Load the credentials
+        gd = gdoc.authorize(cfg.credentials.gcp())
+    except (JSONDecodeError, KeyError, ValueError) as e:
+        return Result.error("google_docs", f"unable to load credentials: {e}")
+
+    try:
+        # Open the document
+        document = gd.open_by_url(cfg.template.url)
+
+        # Check that placeholders are in document
+        for key in cfg.template.placeholders.__fields__.keys():
+            value = getattr(cfg.template.placeholders, key)
+            if value not in document.text:
+                return Result.error("google_docs", f'missing placeholder for "{key}"')
+    except HttpError as e:
+        if e.status_code == 404:
+            return Result.error("google_docs", "document not found")
+        elif e.status_code == 401 or e.status_code == 403:
+            return Result.error("google_docs", "unauthorized")
+        else:
+            return Result.error(
+                "google_docs",
+                f"unable to get document: ({e.status_code}) {e._get_reason()}",
+            )
+    except gdoc.utils.NoValidIdFound:
+        return Result.error("google_docs", "invalid document url")
+
+    return Result.ok("google_docs")
