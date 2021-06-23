@@ -1,5 +1,7 @@
 from click import style
 from enum import Enum
+import gspread
+from json import JSONDecodeError
 from pydantic import BaseModel
 import requests
 import typing as t
@@ -36,7 +38,7 @@ class Result(BaseModel):
 
 
 def validate(cfg: Config) -> t.List[Result]:
-    return [test_mailgun(cfg)]
+    return [test_mailgun(cfg), test_sheets(cfg)]
 
 
 def test_mailgun(cfg: Config) -> Result:
@@ -76,3 +78,39 @@ def test_mailgun(cfg: Config) -> Result:
         return Result.error("mailgun", str(e))
 
     return Result.ok("mailgun")
+
+
+def test_sheets(cfg: Config) -> Result:
+    """
+    Test authentication, check the sheet exists, and check the headers exist
+    :param cfg: the configuration
+    :return: status of the test
+    """
+    try:
+        # Load the credentials
+        gs = gspread.authorize(cfg.credentials.gcp())
+    except (JSONDecodeError, KeyError, ValueError) as e:
+        return Result.error("google_sheets", f"unable to load credentials: {e}")
+
+    try:
+        # Open the sheet
+        sheet = gs.open_by_url(cfg.sponsors.url)
+
+        # Find the worksheet
+        worksheet = sheet.worksheet(cfg.sponsors.sheet)
+
+        # Check the headers exist
+        values = worksheet.row_values(1)
+        for header in cfg.sponsors.headers.__fields__.keys():
+            if getattr(cfg.sponsors.headers, header) not in values:
+                return Result.error("google_sheets", f"cannot find {header} column")
+    except gspread.exceptions.APIError as e:
+        if e.response.status_code == 404:
+            return Result.error("google_sheets", "sheet not found")
+
+        error = e.response.json()
+        return Result.error("google_sheets", error.get("message"))
+    except gspread.exceptions.WorksheetNotFound:
+        return Result.error("google_sheets", "worksheet not found")
+
+    return Result.ok("google_sheets")

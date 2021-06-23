@@ -1,8 +1,9 @@
+from google.oauth2.service_account import Credentials as ServiceAccountCredentials
 from pathlib import Path
 from pydantic import BaseModel, FilePath, HttpUrl, validator
 from requests.auth import HTTPBasicAuth
 
-from .constants import DEFAULT_CONFIG
+from .constants import DEFAULT_CONFIG, SCOPES
 
 
 def is_present(value: str) -> str:
@@ -48,6 +49,15 @@ class Credentials(BaseModel):
     _is_present_mailgun_api_key = validator("mailgun_api_key", allow_reuse=True)(
         is_present
     )
+
+    def gcp(self) -> ServiceAccountCredentials:
+        """
+        Get authentication information for GCP
+        """
+        full_path = self.gcp_service_account.resolve()
+        return ServiceAccountCredentials.from_service_account_file(
+            str(full_path), scopes=SCOPES
+        )
 
     def mailgun(self) -> HTTPBasicAuth:
         """
