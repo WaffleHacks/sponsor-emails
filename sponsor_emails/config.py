@@ -17,17 +17,6 @@ def is_present(value: str) -> str:
     return value
 
 
-def load_config(p: Path) -> "Config":
-    """
-    Load configuration from the given path
-    :param p: config path
-    :return: loaded configuration
-    """
-    if not p.exists():
-        p.write_text(DEFAULT_CONFIG)
-    return Config.parse_file(p)
-
-
 class Config(BaseModel):
     """
     The configuration for all of the program
@@ -36,6 +25,17 @@ class Config(BaseModel):
     credentials: "Credentials"
     sponsors: "Sponsors"
     template: "Template"
+
+    @staticmethod
+    def load(p: Path) -> "Config":
+        """
+        Load configuration from the given path
+        :param p: config path
+        :return: loaded configuration
+        """
+        if not p.exists():
+            p.write_text(DEFAULT_CONFIG)
+        return Config.parse_file(p)
 
 
 class Credentials(BaseModel):

@@ -3,7 +3,7 @@ from pathlib import Path
 from pydantic import ValidationError
 from sys import exit
 
-from sponsor_emails import Config, load_config, tests
+from sponsor_emails import Config, tests
 
 
 def error(message: str):
@@ -40,7 +40,7 @@ def main(ctx: click.Context, config_path: Path):
 
     else:
         try:
-            ctx.obj = load_config(config_path)
+            ctx.obj = Config.load(config_path)
         except ValidationError as e:
             error("failed to load configuration")
 
