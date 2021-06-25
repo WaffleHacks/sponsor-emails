@@ -1,9 +1,9 @@
+import mailgun as mailgun_client
 import requests
 
 
 from .result import Result
 from ..config import Config
-from ..constants import MAILGUN_URL
 
 
 def mailgun(cfg: Config) -> Result:
@@ -13,32 +13,29 @@ def mailgun(cfg: Config) -> Result:
     :return: status of the test
     """
     try:
-        response = requests.get(
-            MAILGUN_URL + "/domains/" + cfg.credentials.mailgun_domain,
-            auth=cfg.credentials.mailgun(),
+        mg = mailgun_client.authorize(
+            cfg.credentials.mailgun(), cfg.credentials.mailgun_domain
         )
-
-        # Status code based checks
-        if response.status_code == 404:
-            return Result.error("mailgun", "domain not found")
-        elif response.status_code == 401:
-            return Result.error("mailgun", "invalid private key")
-        elif response.status_code >= 500:
-            return Result.error("mailgun", "internal server error")
-
-        domain = response.json().get("domain")
+        info = mg.info()
 
         # Ensure the domain is not disabled
-        if domain.get("is_disabled"):
+        if info.domain.is_disabled:
             return Result.error("mailgun", "domain disabled")
 
         # Ensure the domain is properly configured
-        state = domain.get("state")
-        if state != "active":
+        if info.domain.state != "active":
             return Result.error(
                 "mailgun",
-                f'domain improperly configured (currently: "{state}")',
+                f'domain improperly configured (currently: "{info.domain.state}")',
             )
+    except mailgun_client.DomainNotFoundException:
+        return Result.error("mailgun", "domain not found")
+    except mailgun_client.UnauthorizedException:
+        return Result.error("mailgun", "invalid primary key")
+    except mailgun_client.MailGunException as e:
+        return Result.error(
+            "mailgun", f"an internal server error ({e.status}) occurred"
+        )
     except requests.RequestException as e:
         return Result.error("mailgun", str(e))
 
