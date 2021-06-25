@@ -38,7 +38,7 @@ def docs(cfg: Config) -> Result:
                 "google_docs",
                 f"unable to get document: ({e.status_code}) {e._get_reason()}",
             )
-    except gdoc.utils.NoValidIdFound:
+    except gdoc.NoValidIdFound:
         return Result.error("google_docs", "invalid document url")
 
     return Result.ok("google_docs")
