@@ -1,9 +1,10 @@
 import mailgun as mailgun_client
 import requests
 
-
 from .result import Result
 from ..config import Config
+
+TEST_NAME = "mailgun"
 
 
 def mailgun(cfg: Config) -> Result:
@@ -20,23 +21,23 @@ def mailgun(cfg: Config) -> Result:
 
         # Ensure the domain is not disabled
         if info.domain.is_disabled:
-            return Result.error("mailgun", "domain disabled")
+            return Result.error(TEST_NAME, "domain disabled")
 
         # Ensure the domain is properly configured
         if info.domain.state != "active":
             return Result.error(
-                "mailgun",
+                TEST_NAME,
                 f'domain improperly configured (currently: "{info.domain.state}")',
             )
     except mailgun_client.DomainNotFoundException:
-        return Result.error("mailgun", "domain not found")
+        return Result.error(TEST_NAME, "domain not found")
     except mailgun_client.UnauthorizedException:
-        return Result.error("mailgun", "invalid primary key")
+        return Result.error(TEST_NAME, "invalid primary key")
     except mailgun_client.MailGunException as e:
         return Result.error(
-            "mailgun", f"an internal server error ({e.status}) occurred"
+            TEST_NAME, f"an internal server error ({e.status}) occurred"
         )
     except requests.RequestException as e:
-        return Result.error("mailgun", str(e))
+        return Result.error(TEST_NAME, str(e))
 
-    return Result.ok("mailgun")
+    return Result.ok(TEST_NAME)

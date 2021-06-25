@@ -2,11 +2,13 @@ import gspread
 from json import JSONDecodeError
 
 from .result import Result
-from .. import sheets as sheets_utils
+from .. import sheets
 from ..config import Config
 
+TEST_NAME = "sponsors"
 
-def sheets(cfg: Config) -> Result:
+
+def sponsors(cfg: Config) -> Result:
     """
     Test authentication, check the sheet exists, and check the headers exist
     :param cfg: the configuration
@@ -16,7 +18,7 @@ def sheets(cfg: Config) -> Result:
         # Load the credentials
         gs = gspread.authorize(cfg.credentials.gcp())
     except (JSONDecodeError, KeyError, ValueError) as e:
-        return Result.error("google_sheets", f"unable to load credentials: {e}")
+        return Result.error(TEST_NAME, f"unable to load credentials: {e}")
 
     try:
         # Open the worksheet
@@ -24,16 +26,16 @@ def sheets(cfg: Config) -> Result:
         worksheet = sheet.worksheet(cfg.sponsors.sheet)
 
         # Check the columns exist
-        sheets_utils.map_columns_to_headers(worksheet, cfg.sponsors.headers)
+        sheets.map_columns_to_headers(worksheet, cfg.sponsors.headers)
     except gspread.exceptions.APIError as e:
         if e.response.status_code == 404:
-            return Result.error("google_sheets", "sheet not found")
+            return Result.error(TEST_NAME, "sheet not found")
 
         error = e.response.json()
-        return Result.error("google_sheets", error.get("message"))
+        return Result.error(TEST_NAME, error.get("message"))
     except gspread.exceptions.WorksheetNotFound:
-        return Result.error("google_sheets", "worksheet not found")
-    except sheets_utils.MissingHeaderException as e:
-        return Result.error("google_sheets", f'missing column header "{e.header}"')
+        return Result.error(TEST_NAME, "worksheet not found")
+    except sheets.MissingHeaderException as e:
+        return Result.error(TEST_NAME, f'missing column header "{e.header}"')
 
-    return Result.ok("google_sheets")
+    return Result.ok(TEST_NAME)

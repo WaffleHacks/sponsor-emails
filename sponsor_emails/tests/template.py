@@ -2,12 +2,13 @@ import gdoc
 from googleapiclient.errors import HttpError
 from json import JSONDecodeError
 
-
 from .result import Result
 from ..config import Config
 
+TEST_NAME = "template"
 
-def docs(cfg: Config) -> Result:
+
+def template(cfg: Config) -> Result:
     """
     Test authentication, check the doc exists, and check the placeholders exist
     :param cfg: the configuration
@@ -17,7 +18,7 @@ def docs(cfg: Config) -> Result:
         # Load the credentials
         gd = gdoc.authorize(cfg.credentials.gcp())
     except (JSONDecodeError, KeyError, ValueError) as e:
-        return Result.error("google_docs", f"unable to load credentials: {e}")
+        return Result.error(TEST_NAME, f"unable to load credentials: {e}")
 
     try:
         # Open the document
@@ -27,18 +28,18 @@ def docs(cfg: Config) -> Result:
         for key in cfg.template.placeholders.__fields__.keys():
             value = getattr(cfg.template.placeholders, key)
             if value not in document.text:
-                return Result.error("google_docs", f'missing placeholder for "{key}"')
+                return Result.error(TEST_NAME, f'missing placeholder for "{key}"')
     except HttpError as e:
         if e.status_code == 404:
-            return Result.error("google_docs", "document not found")
+            return Result.error(TEST_NAME, "document not found")
         elif e.status_code == 401 or e.status_code == 403:
-            return Result.error("google_docs", "unauthorized")
+            return Result.error(TEST_NAME, "unauthorized")
         else:
             return Result.error(
-                "google_docs",
+                TEST_NAME,
                 f"unable to get document: ({e.status_code}) {e._get_reason()}",
             )
     except gdoc.NoValidIdFound:
-        return Result.error("google_docs", "invalid document url")
+        return Result.error(TEST_NAME, "invalid document url")
 
-    return Result.ok("google_docs")
+    return Result.ok(TEST_NAME)

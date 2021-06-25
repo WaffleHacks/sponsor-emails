@@ -1,5 +1,5 @@
-from .docs import docs
 from .mailgun import mailgun
-from .sheets import sheets
+from .sponsors import sponsors
+from .template import template
 
-METHODS = [docs, mailgun, sheets]
+METHODS = [mailgun, sponsors, template]
