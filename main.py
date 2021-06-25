@@ -58,6 +58,7 @@ def main(ctx: click.Context, config_path: Path):
 @main.command(help="Check that the configuration is valid")
 @click.pass_obj
 def validate(cfg: Config):
+    click.echo("Running tests:")
     for test in tests.METHODS:
         click.echo(test(cfg))
 
