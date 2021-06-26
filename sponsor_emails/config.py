@@ -82,17 +82,18 @@ class Credentials(BaseModel):
 
 
 class Senders(BaseModel):
-    url: HttpUrl = "https://docs.google.com/spreadsheets/d/your-senders-sheet/edit"
+    url: HttpUrl
     sheet: str = "Organizers"
-    reply_to: EmailStr = "sponsors@your.domain"
+    reply_to: EmailStr
     header: str = "Name"
 
     _sheet_is_present = validator("sheet", allow_reuse=True)(is_present)
+    _header_is_present = validator("header", allow_reuse=True)(is_present)
     _url_is_google_drive = validator("url", allow_reuse=True)(is_google_drive)
 
 
 class Sponsors(BaseModel):
-    url: HttpUrl = "https://docs.google.com/spreadsheets/d/your-sponsors-sheet/edit"
+    url: HttpUrl
     sheet: str = "Sponsorship Database"
     headers: "SponsorsHeaders"
 
@@ -109,7 +110,7 @@ class SponsorsHeaders(BaseModel):
 
 
 class Template(BaseModel):
-    url: HttpUrl = "https://docs.google.com/document/d/your-document/edit"
+    url: HttpUrl
     placeholders: "TemplatePlaceholders"
 
     _url_is_google_drive = validator("url", allow_reuse=True)(is_google_drive)
