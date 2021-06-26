@@ -1,9 +1,12 @@
 from google.oauth2.service_account import Credentials as ServiceAccountCredentials
 from pathlib import Path
-from pydantic import BaseModel, FilePath, HttpUrl, validator
+from pydantic import BaseModel, EmailStr, FilePath, HttpUrl, validator
+import re
 from requests.auth import HTTPBasicAuth
 
 from .constants import DEFAULT_CONFIG, SCOPES
+
+GOOGLE_DRIVE_RE = re.compile(r"^/(document|spreadsheets)/d/[a-zA-Z0-9-_]+(/\w+)?")
 
 
 def is_present(value: str) -> str:
@@ -17,12 +20,24 @@ def is_present(value: str) -> str:
     return value
 
 
+def is_google_drive(value: HttpUrl) -> HttpUrl:
+    """
+    Ensure that a URL is a Google Drive URL
+    :param value: the url to validate
+    :return: a valid URL
+    """
+    if value.host != "docs.google.com" or not GOOGLE_DRIVE_RE.fullmatch(value.path):
+        raise ValueError("must be a Google Docs URL")
+    return value
+
+
 class Config(BaseModel):
     """
     The configuration for all of the program
     """
 
     credentials: "Credentials"
+    senders: "Senders"
     sponsors: "Sponsors"
     template: "Template"
 
@@ -66,12 +81,23 @@ class Credentials(BaseModel):
         return HTTPBasicAuth("api", self.mailgun_api_key)
 
 
+class Senders(BaseModel):
+    url: HttpUrl = "https://docs.google.com/spreadsheets/d/your-senders-sheet/edit"
+    sheet: str = "Organizers"
+    reply_to: EmailStr = "sponsors@your.domain"
+    header: str = "Name"
+
+    _sheet_is_present = validator("sheet", allow_reuse=True)(is_present)
+    _url_is_google_drive = validator("url", allow_reuse=True)(is_google_drive)
+
+
 class Sponsors(BaseModel):
-    url: HttpUrl = "https://docs.google.com/spreadsheets/d/your-sheet/edit"
+    url: HttpUrl = "https://docs.google.com/spreadsheets/d/your-sponsors-sheet/edit"
     sheet: str = "Sponsorship Database"
     headers: "SponsorsHeaders"
 
     _sheet_is_present = validator("sheet", allow_reuse=True)(is_present)
+    _url_is_google_drive = validator("url", allow_reuse=True)(is_google_drive)
 
 
 class SponsorsHeaders(BaseModel):
@@ -85,6 +111,8 @@ class SponsorsHeaders(BaseModel):
 class Template(BaseModel):
     url: HttpUrl = "https://docs.google.com/document/d/your-document/edit"
     placeholders: "TemplatePlaceholders"
+
+    _url_is_google_drive = validator("url", allow_reuse=True)(is_google_drive)
 
 
 class TemplatePlaceholders(BaseModel):

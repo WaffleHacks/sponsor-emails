@@ -5,8 +5,14 @@ DEFAULT_CONFIG = """{
     "mailgun_domain": "",
     "mailgun_api_key": ""
   },
+  "senders": {
+    "url": "https://docs.google.com/spreadsheets/d/your-senders-sheet/edit",
+    "sheet": "Organizers",
+    "reply_to": "sponsors@your.domain",
+    "header": "Name"
+  },
   "sponsors": {
-    "url": "https://docs.google.com/spreadsheets/d/your-sheet/edit",
+    "url": "https://docs.google.com/spreadsheets/d/your-sponsors-sheet/edit",
     "sheet": "Sponsorship Database",
     "headers": {
       "company_name": "Company Name",
