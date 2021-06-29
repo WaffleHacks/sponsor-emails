@@ -1,0 +1,34 @@
+name: Python package
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        python-version: [3.8, 3.9]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Set up Poetry
+        uses: abatilo/actions-poetry@v2.0.0
+      - name: Install dependencies
+        run: poetry install
+      - name: Package
+        run: poetry build
+      - name: Upload tarball
+        uses: actions/upload-artifact@v2
+        with:
+          name: sponsor-emails.tar.gz
+          path: dist/sponsor-emails-*.tar.gz
+      - name: Upload wheel
+        uses: actions/upload-artifact@v2
+        with:
+          name: sponsor_emails-py3-none-any.whl
+          path: dist/sponsor_emails-*-py3-none-any.whl
+
