@@ -253,3 +253,4 @@ Thumbs.db
 ### Project Files ###
 service-account.json
 config.json
+dry-run-out/

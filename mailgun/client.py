@@ -46,6 +46,7 @@ class MailGun(object):
         text: str,
         html: str = None,
         files: t.List[t.BinaryIO] = None,
+        headers: t.Dict[str, str] = None,
     ):
         """
         Send a MIME email
@@ -55,6 +56,7 @@ class MailGun(object):
         :param text: the plaintext content
         :param html: optional HTML content (if the recipient client supports it)
         :param files: attachments to the message
+        :param headers: extra headers to be added to the message
         """
         # Construct the attachments
         attachments = []
@@ -65,6 +67,11 @@ class MailGun(object):
         body = {"from": from_, "to": ",".join(to), "subject": subject, "text": text}
         if html:
             body["html"] = html
+
+        # Add headers to the body
+        if headers is not None:
+            for header, value in headers.items():
+                body[f"h:{header}"] = value
 
         # Send the request
         response = self.session.post(

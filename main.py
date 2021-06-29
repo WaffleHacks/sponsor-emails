@@ -2,16 +2,9 @@ import click
 from pathlib import Path
 from pydantic import ValidationError
 from sys import exit
+from typing import Optional
 
-from sponsor_emails import Config, tests
-
-
-def error(message: str):
-    """
-    Display an error message
-    :param message: the message to display
-    """
-    click.echo(click.style("ERROR: ", fg="red", bold=True) + message)
+from sponsor_emails import Config, logging, sender, tests
 
 
 @click.group(
@@ -42,7 +35,7 @@ def main(ctx: click.Context, config_path: Path):
         try:
             ctx.obj = Config.load(config_path)
         except ValidationError as e:
-            error("failed to load configuration")
+            logging.error("failed to load configuration")
 
             for err in e.errors():
                 location = ".".join(err["loc"])
@@ -58,9 +51,45 @@ def main(ctx: click.Context, config_path: Path):
 @main.command(help="Check that the configuration is valid")
 @click.pass_obj
 def validate(cfg: Config):
-    click.echo("Running tests:")
+    logging.info("Running tests..")
     for test in tests.METHODS:
         click.echo(test(cfg))
+    logging.info("Done!")
+
+
+@main.command(help="Send the sponsor emails")
+@click.option(
+    "-s",
+    "--single",
+    is_flag=True,
+    help="Send an email to the first company in the list",
+)
+@click.option(
+    "-d",
+    "--dry-run",
+    is_flag=True,
+    help="Pull and format the message but don't send anything",
+)
+@click.option(
+    "-o", "--overwrite", help="Overwrite the recipient email for testing", default=None
+)
+@click.pass_obj
+def send(cfg: Config, single: bool, dry_run: bool, overwrite: Optional[str]):
+    if dry_run:
+        Path("./dry-run-out").mkdir(exist_ok=True)
+
+    logging.info(f"Settings: single={single} dry_run={dry_run} overwrite={overwrite}")
+
+    try:
+        success, skipped, total = sender.run(cfg, single, dry_run, overwrite)
+        click.secho("Successfully sent ", fg="green", nl=False)
+        click.secho(f"{success}/{total}", fg="blue", nl=False)
+        click.secho(" sponsor emails!", fg="green", nl=False)
+        if skipped != 0:
+            click.secho(f" (Skipped {skipped} emails)", fg="yellow")
+    except sender.SendException as e:
+        logging.error(e.message)
+        exit(1)
 
 
 if __name__ == "__main__":
