@@ -5,6 +5,7 @@ from googleapiclient.errors import HttpError
 import gspread
 from json import JSONDecodeError
 import mailgun
+from pathlib import Path
 import random
 import typing as t
 from uuid import uuid4
@@ -40,6 +41,7 @@ def send_message(
     contact_email: str,
     sender: str,
     reply_to: str,
+    sponsorship_package: t.Optional[Path],
     dry_run: bool,
 ) -> bool:
     """
@@ -50,6 +52,7 @@ def send_message(
     :param contact_email: the email of the contact at the company
     :param sender: the name of the person sending the email
     :param reply_to: the email which replies are directed to
+    :param sponsorship_package: an optional file for the sponsorship package
     :param dry_run: whether to actually send the email
     :return: whether the sending was successful
     """
@@ -80,12 +83,18 @@ def send_message(
         return True
 
     try:
+        # Open the package if necessary
+        files = []
+        if sponsorship_package:
+            files.append(sponsorship_package.open("rb"))
+
         mg.send(
             from_=f"{sender} <{sender_email}>",
             to=emails,
             subject="WaffleHacks Sponsorship Opportunity",
             text=text,
             html=html,
+            files=files,
             headers={"Reply-To": reply_to},
         )
     except mailgun.MailGunException as e:
@@ -228,6 +237,7 @@ def run(
             contact_email if overwrite is None else overwrite,
             sender,
             cfg.senders.reply_to,
+            cfg.sponsors.package,
             dry_run,
         ):
             new_statuses.append(cfg.sponsors.statuses.sent)

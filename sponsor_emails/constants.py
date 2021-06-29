@@ -14,6 +14,7 @@ DEFAULT_CONFIG = """{
   "sponsors": {
     "url": "https://docs.google.com/spreadsheets/d/your-sponsors-sheet/edit",
     "sheet": "Sponsorship Database",
+    "package": "./sponsorship-package.pdf",
     "headers": {
       "company_name": "Company Name",
       "contact_name": "Contact Name",

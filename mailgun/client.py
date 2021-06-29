@@ -61,7 +61,7 @@ class MailGun(object):
         # Construct the attachments
         attachments = []
         if files is not None:
-            attachments = [("attachment", file.read()) for file in files]
+            attachments = [("attachment", (file.name, file.read())) for file in files]
 
         # Construct the body
         body = {"from": from_, "to": ",".join(to), "subject": subject, "text": text}

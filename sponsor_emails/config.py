@@ -3,6 +3,7 @@ from pathlib import Path
 from pydantic import BaseModel, EmailStr, FilePath, HttpUrl, validator
 import re
 from requests.auth import HTTPBasicAuth
+from typing import Optional
 
 from .constants import DEFAULT_CONFIG, SCOPES
 
@@ -95,6 +96,7 @@ class Senders(BaseModel):
 class Sponsors(BaseModel):
     url: HttpUrl
     sheet: str = "Sponsorship Database"
+    package: Optional[Path]
     headers: "SponsorsHeaders"
     statuses: "SponsorsStatuses"
 
