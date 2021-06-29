@@ -76,7 +76,7 @@ def validate(cfg: Config):
 @click.pass_obj
 def send(cfg: Config, single: bool, dry_run: bool, overwrite: Optional[str]):
     if dry_run:
-        Path("./dry-run-out").mkdir(exist_ok=True)
+        Path("../dry-run-out").mkdir(exist_ok=True)
 
     logging.info(f"Settings: single={single} dry_run={dry_run} overwrite={overwrite}")
 

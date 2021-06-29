@@ -3,6 +3,11 @@ name = "sponsor-emails"
 version = "0.1.0"
 description = "Automate sending sponsorship emails using Google Docs, Google Sheets, and MailGun"
 authors = ["Alex Krantz <alex@krantz.dev>"]
+packages = [
+    { include = "sponsor_emails" },
+    { include = "gdoc" },
+    { include = "mailgun" },
+]
 
 [tool.poetry.dependencies]
 python = "^3.8"
@@ -15,6 +20,9 @@ email-validator = "^1.1.3"
 
 [tool.poetry.dev-dependencies]
 black = "^21.6b0"
+
+[tool.poetry.scripts]
+sponsor-emails = "sponsor_emails.cli:main"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
