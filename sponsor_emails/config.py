@@ -96,6 +96,7 @@ class Sponsors(BaseModel):
     url: HttpUrl
     sheet: str = "Sponsorship Database"
     headers: "SponsorsHeaders"
+    statuses: "SponsorsStatuses"
 
     _sheet_is_present = validator("sheet", allow_reuse=True)(is_present)
     _url_is_google_drive = validator("url", allow_reuse=True)(is_google_drive)
@@ -105,6 +106,14 @@ class SponsorsHeaders(BaseModel):
     company_name: str = "Company Name"
     contact_name: str = "Contact Person"
     contact_email: str = "Contact Email"
+    sent_status: str = "Status"
+
+    _is_present = validator("*", allow_reuse=True)(is_present)
+
+
+class SponsorsStatuses(BaseModel):
+    sent: str = "Waiting for Response"
+    pending: str = "Pending"
 
     _is_present = validator("*", allow_reuse=True)(is_present)
 

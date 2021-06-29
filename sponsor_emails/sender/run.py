@@ -165,6 +165,7 @@ def run(
     senders_data = senders_data[senders_column]  # Get the bare array
 
     # Ensure all data is the same length
+    print(sponsors_data)
     lengths = list(map(lambda d: len(d), sponsors_data.values()))
     total = lengths[0]
     if not lengths.count(lengths[0]) == len(lengths):
@@ -185,9 +186,16 @@ def run(
         company = sponsors_data[sponsors_columns.company_name][i]
         contact_name = sponsors_data[sponsors_columns.contact_name][i]
         contact_email = sponsors_data[sponsors_columns.contact_email][i]
+        sent_status = sponsors_data[sponsors_columns.sent_status][i]
         sender = random.choice(senders_data)
 
         status = f"<{i + 1}/{total}> {{}} message to {company} ({contact_name})"
+
+        # Only send if no status
+        if sent_status != cfg.sponsors.statuses.pending:
+            logging.info(status.format("already sent"))
+            success += 1
+            continue
 
         # Ensure all the necessary data is present
         if company is None or contact_name is None or contact_email is None:

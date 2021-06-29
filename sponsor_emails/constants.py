@@ -17,7 +17,12 @@ DEFAULT_CONFIG = """{
     "headers": {
       "company_name": "Company Name",
       "contact_name": "Contact Name",
-      "contact_email": "Contact Email"
+      "contact_email": "Contact Email",
+      "sent_status": "Status"
+    },
+    "statuses": {
+      "sent": "Waiting for Response",
+      "pending": "Pending"    
     }
   },
   "template": {
