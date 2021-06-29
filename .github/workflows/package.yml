@@ -24,11 +24,11 @@ jobs:
       - name: Upload tarball
         uses: actions/upload-artifact@v2
         with:
-          name: sponsor-emails.tar.gz
+          name: sponsor-emails_${{ matrix.python-version }}.tar.gz
           path: dist/sponsor-emails-*.tar.gz
       - name: Upload wheel
         uses: actions/upload-artifact@v2
         with:
-          name: sponsor_emails-py3-none-any.whl
+          name: sponsor_emails_${{ matrix.python-version }}.whl
           path: dist/sponsor_emails-*-py3-none-any.whl
 
