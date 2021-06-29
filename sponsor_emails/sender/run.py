@@ -165,7 +165,6 @@ def run(
     senders_data = senders_data[senders_column]  # Get the bare array
 
     # Ensure all data is the same length
-    print(sponsors_data)
     lengths = list(map(lambda d: len(d), sponsors_data.values()))
     total = lengths[0]
     if not lengths.count(lengths[0]) == len(lengths):
@@ -180,6 +179,7 @@ def run(
     # Send all the messages
     success = 0
     skipped = 0
+    new_statuses = []
     logging.info(f"Sending {total} messages...")
     for i in range(total):
         # Get all the values from the spreadsheet
@@ -194,6 +194,7 @@ def run(
         # Only send if no status
         if sent_status != cfg.sponsors.statuses.pending:
             logging.info(status.format("already sent"))
+            new_statuses.append(sent_status)
             success += 1
             continue
 
@@ -229,10 +230,16 @@ def run(
             cfg.senders.reply_to,
             dry_run,
         ):
+            new_statuses.append(cfg.sponsors.statuses.sent)
             logging.info(status.format("sent"))
             success += 1
         else:
+            new_statuses.append(cfg.sponsors.statuses.pending)
             logging.error(status.format("failed to send"))
             skipped += 1
+
+    # Write the new statuses to the spreadsheet
+    if not dry_run:
+        sheets.update_column(sponsors, sponsors_columns.sent_status, new_statuses)
 
     return success, skipped, total

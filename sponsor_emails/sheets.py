@@ -73,3 +73,17 @@ def fetch_data(
         cleaned[columns[i]] = column
 
     return cleaned
+
+
+def update_column(worksheet: gspread.Worksheet, column: str, data: t.List[str]):
+    """
+    Update a column's data
+    :param worksheet: the worksheet to update
+    :param column: the column to update
+    :param data: the data to replace the current cells with
+    """
+    # Format the range and data
+    r = f"{column}2:{column}{len(data)+1}"
+    formatted = list(map(lambda v: [v], data))
+
+    worksheet.update(r, formatted)
