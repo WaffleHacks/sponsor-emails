@@ -105,7 +105,12 @@ def send_message(
 
 
 def run(
-    cfg: Config, single: bool, dry_run: bool, overwrite: t.Optional[str]
+    cfg: Config,
+    single: bool,
+    dry_run: bool,
+    overwrite: t.Optional[str],
+    offset: int,
+    count: t.Optional[int],
 ) -> t.Tuple[int, int, int]:
     """
     Send all the sponsor emails
@@ -113,6 +118,8 @@ def run(
     :param single: send only a single email
     :param dry_run: don't actually send any emails
     :param overwrite: replace the recipient email
+    :param offset: the number of emails to skip
+    :param count: the number of emails to send
     :return: the number of successful emails, number of skipped emails, and total emails sent
     """
     # Connect to the services
@@ -172,6 +179,11 @@ def run(
     logger.info("Fetching senders data...")
     senders_data = sheets.fetch_data(senders, [senders_column])
     senders_data = senders_data[senders_column]  # Get the bare array
+
+    # Get the data based on the offset and skip
+    end = None if count is None else offset + count
+    for column in sponsors_data:
+        sponsors_data[column] = sponsors_data[column][offset:end]
 
     # Ensure all data is the same length
     lengths = list(map(lambda d: len(d), sponsors_data.values()))

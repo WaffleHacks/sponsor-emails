@@ -71,17 +71,32 @@ def validate(cfg: Config):
     help="Pull and format the message but don't send anything",
 )
 @click.option(
-    "-o", "--overwrite", help="Overwrite the recipient email for testing", default=None
+    "--overwrite", help="Overwrite the recipient email for testing", default=None
+)
+@click.option(
+    "-o", "--offset", help="The number of sponsors to skip", default=0, type=int
+)
+@click.option(
+    "-c", "--count", help="The number of emails to send", default=None, type=int
 )
 @click.pass_obj
-def send(cfg: Config, single: bool, dry_run: bool, overwrite: Optional[str]):
+def send(
+    cfg: Config,
+    single: bool,
+    dry_run: bool,
+    overwrite: Optional[str],
+    offset: int,
+    count: Optional[int],
+):
     if dry_run:
         Path("../dry-run-out").mkdir(exist_ok=True)
 
     logger.info(f"Settings: single={single} dry_run={dry_run} overwrite={overwrite}")
 
     try:
-        success, skipped, total = sender.run(cfg, single, dry_run, overwrite)
+        success, skipped, total = sender.run(
+            cfg, single, dry_run, overwrite, offset, count
+        )
         click.secho("Successfully sent ", fg="green", nl=False)
         click.secho(f"{success}/{total}", fg="blue", nl=False)
         click.secho(" sponsor emails!", fg="green", nl=False)
