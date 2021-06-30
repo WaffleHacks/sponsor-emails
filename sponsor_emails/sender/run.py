@@ -11,7 +11,7 @@ import typing as t
 from uuid import uuid4
 
 from .errors import CredentialsException, NotFoundException, SendException
-from .. import logging, sheets
+from .. import logger, sheets
 from ..config import Config, TemplatePlaceholders
 
 
@@ -66,7 +66,7 @@ def send_message(
     emails = []
     for _, email in pairs:
         if email == "":
-            logging.error(f'invalid email address found in "{contact_email}"')
+            logger.error(f'invalid email address found in "{contact_email}"')
             return False
         emails.append(f"{contact_name} <{email.lower()}>")
 
@@ -98,7 +98,7 @@ def send_message(
             headers={"Reply-To": reply_to},
         )
     except mailgun.MailGunException as e:
-        logging.error(f"failed to send message: {e}")
+        logger.error(f"failed to send message: {e}")
         return False
 
     return True
@@ -116,7 +116,7 @@ def run(
     :return: the number of successful emails, number of skipped emails, and total emails sent
     """
     # Connect to the services
-    logging.info("Connecting to Google Drive and Mailgun...")
+    logger.info("Connecting to Google Drive and Mailgun...")
     try:
         gd = gdoc.authorize(cfg.credentials.gcp())
         gs = gspread.authorize(cfg.credentials.gcp())
@@ -128,14 +128,14 @@ def run(
 
     # Open the documents
     try:
-        logging.info("Opening message template...")
+        logger.info("Opening message template...")
         template = gd.open_by_url(cfg.template.url)
         template_text = template.text
         template_html = template.html
 
-        logging.info("Opening senders list...")
+        logger.info("Opening senders list...")
         senders = gs.open_by_url(cfg.senders.url).worksheet(cfg.senders.sheet)
-        logging.info("Opening sponsors list...")
+        logger.info("Opening sponsors list...")
         sponsors = gs.open_by_url(cfg.sponsors.url).worksheet(cfg.sponsors.sheet)
     except gspread.exceptions.APIError as e:
         if e.response.status_code == 404:
@@ -165,11 +165,11 @@ def run(
         raise NotFoundException("could not find column header")
 
     # Fetch the data
-    logging.info("Fetching sponsors data...")
+    logger.info("Fetching sponsors data...")
     sponsors_data = sheets.fetch_data(
         sponsors, list(sponsors_columns.dict().values()), single
     )
-    logging.info("Fetching senders data...")
+    logger.info("Fetching senders data...")
     senders_data = sheets.fetch_data(senders, [senders_column])
     senders_data = senders_data[senders_column]  # Get the bare array
 
@@ -189,7 +189,7 @@ def run(
     success = 0
     skipped = 0
     new_statuses = []
-    logging.info(f"Sending {total} messages...")
+    logger.info(f"Sending {total} messages...")
     for i in range(total):
         # Get all the values from the spreadsheet
         company = sponsors_data[sponsors_columns.company_name][i]
@@ -202,18 +202,18 @@ def run(
 
         # Only send if no status
         if sent_status != cfg.sponsors.statuses.pending:
-            logging.info(status.format("already sent"))
+            logger.info(status.format("already sent"))
             new_statuses.append(sent_status)
             success += 1
             continue
 
         # Ensure all the necessary data is present
         if company is None or contact_name is None or contact_email is None:
-            logging.error(
+            logger.error(
                 f'missing value at least one of "company_name", "contact_name", "contact_email"'
                 f" for row: {company}, {contact_name}, {contact_email}"
             )
-            logging.error(status.format("failed to send"))
+            logger.error(status.format("failed to send"))
             skipped += 1
             continue
 
@@ -241,11 +241,11 @@ def run(
             dry_run,
         ):
             new_statuses.append(cfg.sponsors.statuses.sent)
-            logging.info(status.format("sent"))
+            logger.info(status.format("sent"))
             success += 1
         else:
             new_statuses.append(cfg.sponsors.statuses.pending)
-            logging.error(status.format("failed to send"))
+            logger.error(status.format("failed to send"))
             skipped += 1
 
     # Write the new statuses to the spreadsheet

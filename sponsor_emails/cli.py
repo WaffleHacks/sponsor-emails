@@ -4,7 +4,7 @@ from pydantic import ValidationError
 from sys import exit
 from typing import Optional
 
-from sponsor_emails import Config, logging, sender, tests
+from sponsor_emails import Config, logger, sender, tests
 
 
 @click.group(
@@ -35,7 +35,7 @@ def main(ctx: click.Context, config_path: Path):
         try:
             ctx.obj = Config.load(config_path)
         except ValidationError as e:
-            logging.error("failed to load configuration")
+            logger.error("failed to load configuration")
 
             for err in e.errors():
                 location = ".".join(err["loc"])
@@ -51,10 +51,10 @@ def main(ctx: click.Context, config_path: Path):
 @main.command(help="Check that the configuration is valid")
 @click.pass_obj
 def validate(cfg: Config):
-    logging.info("Running tests..")
+    logger.info("Running tests..")
     for test in tests.METHODS:
         click.echo(test(cfg))
-    logging.info("Done!")
+    logger.info("Done!")
 
 
 @main.command(help="Send the sponsor emails")
@@ -78,7 +78,7 @@ def send(cfg: Config, single: bool, dry_run: bool, overwrite: Optional[str]):
     if dry_run:
         Path("../dry-run-out").mkdir(exist_ok=True)
 
-    logging.info(f"Settings: single={single} dry_run={dry_run} overwrite={overwrite}")
+    logger.info(f"Settings: single={single} dry_run={dry_run} overwrite={overwrite}")
 
     try:
         success, skipped, total = sender.run(cfg, single, dry_run, overwrite)
@@ -88,7 +88,7 @@ def send(cfg: Config, single: bool, dry_run: bool, overwrite: Optional[str]):
         if skipped != 0:
             click.secho(f" (Skipped {skipped} emails)", fg="yellow")
     except sender.SendException as e:
-        logging.error(e.message)
+        logger.error(e.message)
         exit(1)
 
 
