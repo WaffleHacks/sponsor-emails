@@ -96,3 +96,11 @@ This should error as there are some necessary details you will need to fill in, 
 #### Validation
 
 To ensure your configuration is correct, run `sponsor-emails validate`.
+
+
+## Development
+
+You will need to install [Poetry](https://python-poetry.org/docs/) and a recent version of Python (3.8+).
+Then install the dependencies with `poetry install`.
+
+The application entrypoint is in `sponsor_emails/cli.py`.
